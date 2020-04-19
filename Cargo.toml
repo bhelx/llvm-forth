@@ -1,0 +1,14 @@
+[package]
+name = "forth"
+version = "0.1.0"
+authors = ["Benjamin Eckel <bhelx@simst.im>"]
+edition = "2018"
+build = "build.rs"
+
+[build-dependencies]
+lalrpop = "0.16.2"
+
+[dependencies]
+lalrpop-util = "0.16.2"
+regex = "0.2.1"
+inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "llvm9-0" }

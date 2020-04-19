@@ -1,0 +1,75 @@
+use std::str::FromStr;
+use crate::ast::Ast;
+use regex::Regex;
+
+grammar;
+
+pub Phrase: Ast = {
+  <v:(<Expr>)*> => Ast::Phrase(v),
+};
+
+Expr: Ast = {
+  Word => Ast::Word(<>),
+  Num => Ast::Push(<>),
+  Bool => Ast::Push(<>),
+  Variable => Ast::Variable(<>),
+  DoLoop => Ast::DoLoop(Box::new(<>)),
+  Definition => Ast::Definition(Box::new(<>)),
+  If => {
+    Ast::Conditional {
+      consequent: Box::new(<>),
+      alternative: None,
+    }
+  },
+  IfElse => {
+    let (consequent, alternative) = <>;
+    Ast::Conditional {
+      consequent: Box::new(consequent),
+      alternative: Some(Box::new(alternative)),
+    }
+  },
+  DotQuote => {
+    // A quick hack to clean up the string
+    let re = Regex::new(r#"[." |"]"#).unwrap();
+    Ast::DotQuote(re.replace_all(&<>, "").to_string())
+  },
+};
+
+Definition: Ast = {
+  ":" <Phrase> ";" => (<>).to_owned(),
+};
+
+DoLoop: Ast = {
+  "do" <Phrase> "loop" => (<>).to_owned(),
+};
+
+If: Ast = {
+  "if" <Phrase> "then" => (<>).to_owned(),
+};
+
+IfElse: (Ast, Ast) = {
+  "if" <Phrase> "else" <Phrase> "then" => (<>).to_owned(),
+};
+
+DotQuote: String = {
+  r#"."[^"]*""# => (<>).to_owned()
+};
+
+Bool: i64 = {
+  "true" => -1,
+  "false" => 0,
+};
+
+Num: i64 = {
+  r"[-]?[0-9]+" => i64::from_str(<>).unwrap()
+};
+
+Word: String = {
+  r#"[A-Za-z_?+*/.=<>!@]+[0-9A-Za-z_?+*/.=<>-]*"# => (<>).to_owned(),
+  r#"[-]+[A-Za-z_?+*/.=<>-]*"# => (<>).to_owned(),
+  r#"[0-9]+[A-Za-z_?+*/.=<>-]+"# => (<>).to_owned(),
+};
+
+Variable: String = {
+  "variable" <Word> => (<>).to_owned()
+};
